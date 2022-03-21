@@ -168,6 +168,41 @@ def add_empty_frames(where, secs, input_video_path, output_video_filename):
     out.release()
 
 
+def trim(start_secs, stop_secs, input_video_path, output_video_filename):
+    """
+    where - "start" or "end"
+    """
+
+    video_stream = cv2.VideoCapture(input_video_path)
+    fps = video_stream.get(cv2.CAP_PROP_FPS)
+    frame_width, frame_height = int(video_stream.get(3)), int(video_stream.get(4))
+    out = cv2.VideoWriter(output_video_filename,
+                          cv2.VideoWriter_fourcc(*'XVID'),
+                          fps, (frame_width, frame_height))
+
+    start_N = int(fps * start_secs)
+    stop_N = int(fps * stop_secs) if stop_secs is not np.inf else np.inf
+    i = 0
+
+    while video_stream.isOpened():
+        ret, frame = video_stream.read()
+        if not ret or i == stop_N:
+            print("Can't receive frame (stream end?). Exiting ...")
+            break
+        if i >= start_N:
+            cv2.imshow('frame', frame)
+            if cv2.waitKey(1) == ord('q'):
+                break
+            out.write(frame)
+        i += 1
+
+    cv2.destroyAllWindows()
+    
+    video_stream.release()
+    out.release()
+
+
+
 if __name__ == "__main__":
     # fps = 25
     # reverse("plate-recognition-server_1.avi",
@@ -178,4 +213,6 @@ if __name__ == "__main__":
     # h_merge(["plate-recognition-server_1.avi", "plate-recognition-server_2.avi"],
     #          "IN_plate-recognition-server.avi", fps)
 
-    add_empty_frames("start", 10, "OUT_plate-recognition-server.avi", "OUT_plate-recognition-server1.avi")
+    # add_empty_frames("start", 10, "OUT_plate-recognition-server.avi", "OUT_plate-recognition-server1.avi")
+
+    trim(10, np.inf, "OUT_plate-recognition-server1.avi", "OUT_plate-recognition-server1_trimed.avi")
